@@ -20,36 +20,36 @@ model Admin {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  password     String
-  name         String
-  phone        String?
-  fcmToken     String?   // Firebase Cloud Messaging token para notificações push
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  business     Business?
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String
+  phone            String?
+  // Push notification: subscription JSON do navegador (Web Push API - sem Firebase)
+  pushSubscription String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  business         Business?
 }
 
 model Business {
-  id          String      @id @default(cuid())
-  slug        String      @unique
+  id          String    @id @default(cuid())
+  slug        String    @unique
   name        String
   description String?
   category    String?
   phone       String?
   address     String?
-  active      Boolean     @default(true)
-  // Faturamento: conta pausada por inadimplência
-  suspended   Boolean     @default(false)
-  userId      String      @unique
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  active      Boolean   @default(true)
+  suspended   Boolean   @default(false)
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos      Photo[]
   timeSlots   TimeSlot[]
   bookings    Booking[]
-  invoices    Invoice[]   // faturas mensais
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  invoices    Invoice[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Photo {
@@ -64,7 +64,7 @@ model Photo {
 
 model TimeSlot {
   id         String    @id @default(cuid())
-  dayOfWeek  Int       // 0=Domingo, 1=Segunda, ..., 6=Sábado
+  dayOfWeek  Int       // 0=Domingo, 1=Segunda ... 6=Sábado
   startTime  String    // ex: "09:00"
   endTime    String    // ex: "09:30"
   duration   Int       @default(30)
@@ -83,7 +83,6 @@ model Booking {
   message      String?
   status       BookingStatus @default(PENDING)
   reminderSent Boolean       @default(false)
-  // Faturamento: indica se este agendamento já foi cobrado em alguma fatura
   invoiced     Boolean       @default(false)
   businessId   String
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -93,20 +92,19 @@ model Booking {
   updatedAt    DateTime      @updatedAt
 }
 
-// Fatura mensal gerada automaticamente
 model Invoice {
-  id              String        @id @default(cuid())
-  businessId      String
-  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  month           Int           // 1–12
-  year            Int
-  bookingCount    Int           // quantidade de agendamentos no mês
-  amountCents     Int           // valor em centavos (bookingCount * 100)
-  status          InvoiceStatus @default(PENDING)
-  paidAt          DateTime?
-  dueDate         DateTime      // vencimento: último dia do mês seguinte
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  businessId   String
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  month        Int
+  year         Int
+  bookingCount Int
+  amountCents  Int
+  status       InvoiceStatus @default(PENDING)
+  paidAt       DateTime?
+  dueDate      DateTime
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@unique([businessId, month, year])
 }
@@ -118,7 +116,7 @@ enum BookingStatus {
 }
 
 enum InvoiceStatus {
-  PENDING    // aguardando pagamento
-  PAID       // pago
-  OVERDUE    // vencida — conta pausada
+  PENDING
+  PAID
+  OVERDUE
 }

@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { prisma } from "./prisma";
-import { sendPushNotification } from "./firebase-admin";
+import { sendPushNotification, PushSubscriptionData } from "./push-notifications";
 import { format, endOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -16,7 +16,7 @@ export function startReminderScheduler() {
       const now = new Date();
       const thirtyFromNow = new Date(now.getTime() + 30 * 60 * 1000);
       const windowStart = new Date(thirtyFromNow.getTime() - 60 * 1000);
-      const windowEnd = new Date(thirtyFromNow.getTime() + 60 * 1000);
+      const windowEnd   = new Date(thirtyFromNow.getTime() + 60 * 1000);
 
       const upcoming = await prisma.booking.findMany({
         where: {
@@ -29,44 +29,51 @@ export function startReminderScheduler() {
 
       for (const booking of upcoming) {
         const { user } = booking.business;
-        if (!user.fcmToken) continue;
+        if (!user.pushSubscription) continue;
+
         const clientName = booking.clientName || "Cliente";
-        await sendPushNotification({
-          fcmToken: user.fcmToken,
+        const sub = JSON.parse(user.pushSubscription) as PushSubscriptionData;
+
+        const result = await sendPushNotification({
+          subscription: sub,
           title: "⏰ Lembrete de Agendamento",
           body: `${clientName} tem um agendamento em 30 minutos (${booking.timeSlot.startTime})`,
           data: { bookingId: booking.id, type: "reminder" },
         });
+
+        // Remove subscription expirada do banco
+        if (!result.success && result.reason === "subscription_expired") {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { pushSubscription: null },
+          });
+        }
+
         await prisma.booking.update({
           where: { id: booking.id },
           data: { reminderSent: true },
         });
       }
     } catch (err) {
-      console.error("Erro no lembrete:", err);
+      console.error("[Scheduler] Erro no lembrete:", err);
     }
   });
 
-  // ── Geração de faturas mensais ── roda às 23:59 do último dia do mês
+  // ── Geração de faturas mensais ── último dia do mês às 23:59
   cron.schedule("59 23 28-31 * *", async () => {
     const now = new Date();
-    const lastDay = endOfMonth(now);
-    // Só executa se for o último dia do mês
-    if (now.getDate() !== lastDay.getDate()) return;
+    if (now.getDate() !== endOfMonth(now).getDate()) return;
 
     try {
-      const month = now.getMonth() + 1;
-      const year = now.getFullYear();
+      const month      = now.getMonth() + 1;
+      const year       = now.getFullYear();
       const monthStart = new Date(year, month - 1, 1);
-      const monthEnd = endOfMonth(now);
-      const dueDate = addDays(endOfMonth(now), 10); // vence 10 dias depois
+      const monthEnd   = endOfMonth(now);
+      const dueDate    = addDays(monthEnd, 10);
 
-      const businesses = await prisma.business.findMany({
-        where: { active: true },
-      });
+      const businesses = await prisma.business.findMany({ where: { active: true } });
 
       for (const biz of businesses) {
-        // Conta agendamentos confirmados no mês
         const bookingCount = await prisma.booking.count({
           where: {
             businessId: biz.id,
@@ -75,84 +82,58 @@ export function startReminderScheduler() {
             invoiced: false,
           },
         });
-
         if (bookingCount === 0) continue;
 
-        const amountCents = bookingCount * 100; // R$1,00 por agendamento
-
-        // Cria ou atualiza fatura
+        const amountCents = bookingCount * 100;
         await prisma.invoice.upsert({
           where: { businessId_month_year: { businessId: biz.id, month, year } },
           update: { bookingCount, amountCents },
-          create: {
-            businessId: biz.id,
-            month,
-            year,
-            bookingCount,
-            amountCents,
-            dueDate,
-            status: "PENDING",
-          },
+          create: { businessId: biz.id, month, year, bookingCount, amountCents, dueDate, status: "PENDING" },
         });
 
-        // Marca agendamentos como faturados
         await prisma.booking.updateMany({
-          where: {
-            businessId: biz.id,
-            status: "CONFIRMED",
-            date: { gte: monthStart, lte: monthEnd },
-            invoiced: false,
-          },
+          where: { businessId: biz.id, status: "CONFIRMED", date: { gte: monthStart, lte: monthEnd }, invoiced: false },
           data: { invoiced: true },
         });
-
-        console.log(
-          `Fatura gerada: ${biz.name} — ${bookingCount} agendamentos — R$${(amountCents / 100).toFixed(2)}`
-        );
       }
     } catch (err) {
-      console.error("Erro na geração de faturas:", err);
+      console.error("[Scheduler] Erro na geração de faturas:", err);
     }
   });
 
-  // ── Verifica faturas vencidas ── roda diariamente às 8h
+  // ── Verifica faturas vencidas ── todo dia às 8h
   cron.schedule("0 8 * * *", async () => {
     try {
-      const now = new Date();
-
-      // Marca faturas vencidas
       await prisma.invoice.updateMany({
-        where: { status: "PENDING", dueDate: { lt: now } },
+        where: { status: "PENDING", dueDate: { lt: new Date() } },
         data: { status: "OVERDUE" },
       });
 
-      // Suspende contas com faturas vencidas
-      const overdueInvoices = await prisma.invoice.findMany({
+      const overdue = await prisma.invoice.findMany({
         where: { status: "OVERDUE" },
         include: { business: { include: { user: true } } },
       });
 
-      for (const inv of overdueInvoices) {
+      for (const inv of overdue) {
         if (!inv.business.suspended) {
           await prisma.business.update({
             where: { id: inv.businessId },
             data: { suspended: true, active: false },
           });
 
-          // Notifica comerciante
-          if (inv.business.user.fcmToken) {
+          if (inv.business.user.pushSubscription) {
+            const sub = JSON.parse(inv.business.user.pushSubscription) as PushSubscriptionData;
             await sendPushNotification({
-              fcmToken: inv.business.user.fcmToken,
+              subscription: sub,
               title: "⛔ Conta Agenda pausada",
               body: `Sua conta foi suspensa por falta de pagamento. Fatura: R$${(inv.amountCents / 100).toFixed(2)}. Contate o suporte.`,
               data: { type: "account_suspended" },
             });
           }
-          console.log(`Conta suspensa: ${inv.business.name}`);
         }
       }
     } catch (err) {
-      console.error("Erro na verificação de faturas:", err);
+      console.error("[Scheduler] Erro na verificação de faturas:", err);
     }
   });
 

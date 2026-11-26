@@ -2,11 +2,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Calendar, Clock, Users, ExternalLink, TrendingUp, AlertCircle, CheckCircle, XCircle, Info, Copy } from "lucide-react";
+import { Calendar, Clock, Users, ExternalLink, TrendingUp, AlertCircle, CheckCircle, XCircle, Info, Bell } from "lucide-react";
 import Link from "next/link";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import CopyLinkButton from "@/components/CopyLinkButton";
+import PushNotificationManager from "@/components/PushNotificationManager";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -334,6 +335,19 @@ export default async function DashboardPage() {
           </code>
           <CopyLinkButton link={publicLink} />
         </div>
+      </div>
+
+      {/* Notificações push (100% próprio, sem Firebase) */}
+      <div className="bg-white rounded-2xl border border-orange-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Bell className="w-5 h-5 text-orange-400" />
+          <h2 className="font-bold text-gray-800">Notificações no Celular</h2>
+        </div>
+        <p className="text-sm text-gray-400 mb-4">
+          Ative para receber aviso quando alguém agendar e 30 minutos antes do horário.
+          Funciona direto pelo navegador — sem precisar de nenhum app externo.
+        </p>
+        <PushNotificationManager />
       </div>
 
       {/* Agendamentos recentes */}

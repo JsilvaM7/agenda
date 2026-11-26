@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/web-push": "^3.6.4",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
-    "firebase-admin": "^14.5.1",
     "lucide-react": "^1.81.0",
     "multer": "^2.5.0",
     "next": "16.4.6",
@@ -23,7 +23,8 @@
     "react-dom": "19.3.0",
     "react-hot-toast": "^2.6.1",
     "sharp": "^0.35.5",
-    "uuid": "^14.0.3"
+    "uuid": "^14.0.3",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",

@@ -1,35 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { prisma } from "@/lib/prisma";
-import { sendPushNotification } from "@/lib/firebase-admin";
+import { sendPushNotification, PushSubscriptionData } from "@/lib/push-notifications";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// POST /api/bookings — criar agendamento (público, sem autenticação)
 export async function POST(req: NextRequest) {
   try {
     const { businessId, timeSlotId, date, clientName, clientPhone, message } =
       await req.json();
 
     if (!businessId || !timeSlotId || !date) {
-      return NextResponse.json(
-        { error: "Campos obrigatórios faltando" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
     }
 
     const bookingDate = new Date(date);
 
     // Verifica se o slot ainda está disponível
-    const existingBooking = await prisma.booking.findFirst({
-      where: {
-        timeSlotId,
-        date: bookingDate,
-        status: { not: "CANCELLED" },
-      },
+    const conflict = await prisma.booking.findFirst({
+      where: { timeSlotId, date: bookingDate, status: { not: "CANCELLED" } },
     });
-
-    if (existingBooking) {
+    if (conflict) {
       return NextResponse.json(
         { error: "Este horário já foi reservado. Escolha outro." },
         { status: 409 }
@@ -42,9 +32,9 @@ export async function POST(req: NextRequest) {
         businessId,
         timeSlotId,
         date: bookingDate,
-        clientName: clientName || null,
-        clientPhone: clientPhone || null,
-        message: message || null,
+        clientName: clientName?.trim() || null,
+        clientPhone: clientPhone?.trim() || null,
+        message: message?.trim() || null,
         status: "CONFIRMED",
       },
       include: {
@@ -53,20 +43,26 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Envia notificação push para o comerciante
-    if (booking.business.user.fcmToken) {
+    // Envia push notification via servidor próprio (sem Firebase)
+    if (booking.business.user.pushSubscription) {
+      const sub = JSON.parse(booking.business.user.pushSubscription) as PushSubscriptionData;
       const dateFormatted = format(bookingDate, "dd/MM/yyyy", { locale: ptBR });
       const clientInfo = booking.clientName || "Cliente";
 
-      await sendPushNotification({
-        fcmToken: booking.business.user.fcmToken,
+      const result = await sendPushNotification({
+        subscription: sub,
         title: "🗓️ Novo Agendamento!",
         body: `${clientInfo} agendou para ${dateFormatted} às ${booking.timeSlot.startTime}`,
-        data: {
-          bookingId: booking.id,
-          type: "new_booking",
-        },
+        data: { bookingId: booking.id, type: "new_booking" },
       });
+
+      // Remove subscription expirada
+      if (!result.success && result.reason === "subscription_expired") {
+        await prisma.user.update({
+          where: { id: booking.business.user.id },
+          data: { pushSubscription: null },
+        });
+      }
     }
 
     return NextResponse.json({ success: true, bookingId: booking.id });
