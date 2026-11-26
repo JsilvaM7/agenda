@@ -1,0 +1,124 @@
+// Agenda - Schema do Banco de Dados
+// PostgreSQL + Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  name         String
+  phone        String?
+  fcmToken     String?   // Firebase Cloud Messaging token para notificações push
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  business     Business?
+}
+
+model Business {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String?
+  category    String?
+  phone       String?
+  address     String?
+  active      Boolean     @default(true)
+  // Faturamento: conta pausada por inadimplência
+  suspended   Boolean     @default(false)
+  userId      String      @unique
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos      Photo[]
+  timeSlots   TimeSlot[]
+  bookings    Booking[]
+  invoices    Invoice[]   // faturas mensais
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Photo {
+  id         String   @id @default(cuid())
+  url        String
+  filename   String
+  order      Int      @default(0)
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model TimeSlot {
+  id         String    @id @default(cuid())
+  dayOfWeek  Int       // 0=Domingo, 1=Segunda, ..., 6=Sábado
+  startTime  String    // ex: "09:00"
+  endTime    String    // ex: "09:30"
+  duration   Int       @default(30)
+  active     Boolean   @default(true)
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+  createdAt  DateTime  @default(now())
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  date         DateTime
+  clientName   String?
+  clientPhone  String?
+  message      String?
+  status       BookingStatus @default(PENDING)
+  reminderSent Boolean       @default(false)
+  // Faturamento: indica se este agendamento já foi cobrado em alguma fatura
+  invoiced     Boolean       @default(false)
+  businessId   String
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  timeSlotId   String
+  timeSlot     TimeSlot      @relation(fields: [timeSlotId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// Fatura mensal gerada automaticamente
+model Invoice {
+  id              String        @id @default(cuid())
+  businessId      String
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  month           Int           // 1–12
+  year            Int
+  bookingCount    Int           // quantidade de agendamentos no mês
+  amountCents     Int           // valor em centavos (bookingCount * 100)
+  status          InvoiceStatus @default(PENDING)
+  paidAt          DateTime?
+  dueDate         DateTime      // vencimento: último dia do mês seguinte
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([businessId, month, year])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  PENDING    // aguardando pagamento
+  PAID       // pago
+  OVERDUE    // vencida — conta pausada
+}
