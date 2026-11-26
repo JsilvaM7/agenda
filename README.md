@@ -1,131 +1,67 @@
-# 📅 Agenda — Sistema de Agendamento para Pequenas Empresas
+# 📅 Agenda
 
-> Software de agendamento online com tema laranja, notificações push e faturamento automático.
+Sistema de agendamento online para pequenas empresas — barbearias, salões, mecânicos e mais.
+
+O comerciante cria uma conta e compartilha um link. O cliente abre o link, escolha a data e horário. Simples assim.
 
 ---
 
-## 🚀 Como configurar
-
-### 1. Instale as dependências
+## ✅ Como rodar localmente
 
 ```bash
+# 1. Instale as dependências
 npm install
-```
 
-### 2. Configure as variáveis de ambiente
-
-```bash
-cp .env.example .env
-```
-
-Preencha `.env` com:
-- `DATABASE_URL` — string de conexão PostgreSQL
-- `NEXTAUTH_SECRET` — chave secreta (gere com `openssl rand -base64 32`)
-- Credenciais do Firebase (para notificações push)
-- `ADMIN_EMAIL` e `ADMIN_PASSWORD` — seu acesso de administrador
-
-### 3. Configure o banco de dados
-
-```bash
-npx prisma generate
+# 2. Configure o banco de dados (SQLite — sem instalação extra)
 npx prisma db push
-```
 
-### 4. Rode em desenvolvimento
-
-```bash
+# 3. Inicie o servidor
 npm run dev
 ```
 
-Acesse: [http://localhost:3000](http://localhost:3000)
+Acesse em: **http://localhost:3000**
 
 ---
 
-## 📱 Funcionalidades
+## ⚙️ Variáveis de ambiente
 
-| Funcionalidade | Descrição |
-|---|---|
-| 🔗 Link público | `/b/nome-da-empresa` — sem login para o cliente |
-| 📅 Calendário | Cliente seleciona data e horário disponível |
-| 📸 Galeria | Até 30 fotos em carrossel automático |
-| 🔔 Notificação | Push ao receber agendamento |
-| ⏰ Lembrete | Push 30 minutos antes do horário |
-| 💳 Faturamento | R$1,00/agendamento — fatura mensal automática |
-| ⛔ Suspensão | Conta pausada automaticamente se não pagar |
-| 🛡️ Admin | Painel completo para gerenciar comerciantes e faturas |
+Crie um arquivo `.env` na raiz (use `.env.example` como base):
 
----
+```env
+DATABASE_URL="file:./agenda.db"
+NEXTAUTH_SECRET="sua-chave-secreta"
+NEXTAUTH_URL="http://localhost:3000"
 
-## 💰 Modelo de cobrança
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="..."
+VAPID_PRIVATE_KEY="..."
+VAPID_SUBJECT="mailto:suporte@agenda-e-dolphin.com"
 
-- **R$ 1,00** por agendamento confirmado
-- Fatura gerada automaticamente no **último dia do mês**
-- Vencimento: **10 dias após** geração
-- Se não pago: **conta suspensa automaticamente**
-- Reativação: marque como pago no painel admin
-
----
-
-## 🗂️ Estrutura do projeto
-
-```
-src/
-├── app/
-│   ├── page.tsx              <- Landing page
-│   ├── login/                <- Login do comerciante
-│   ├── register/             <- Cadastro do comerciante
-│   ├── dashboard/            <- Painel do comerciante
-│   │   ├── page.tsx          <- Visão geral + faturamento
-│   │   └── settings/         <- Fotos, horários, perfil
-│   ├── b/[slug]/             <- Página pública de agendamento
-│   ├── admin/                <- Painel administrador
-│   │   ├── page.tsx          <- Lista de comerciantes
-│   │   ├── login/            <- Login admin
-│   │   ├── invoices/         <- Gestão de faturas
-│   │   └── merchant/[id]/    <- Detalhe do comerciante
-│   └── api/                  <- API Routes
-├── components/               <- Componentes reutilizáveis
-└── lib/
-    ├── prisma.ts             <- Cliente do banco
-    ├── auth.ts               <- Configuração NextAuth
-    ├── firebase-admin.ts     <- Notificações push
-    └── scheduler.ts          <- Cron: lembretes + faturas
+ADMIN_EMAIL="admin@agenda.com"
+ADMIN_PASSWORD="admin123"
 ```
 
 ---
 
-## 🔥 Firebase (notificações push)
+## 🗂️ Stack
 
-1. Crie um projeto em firebase.google.com
-2. Ative o Cloud Messaging
-3. Gere chave de serviço em Configurações > Contas de serviço
-4. Preencha as variáveis FIREBASE_* no .env
-
----
-
-## 🌐 Deploy na IONOS (agenda-e-dolphin.com)
-
-1. Faça o push para o GitHub
-2. Configure o subdomínio na IONOS apontando para seu servidor
-3. Use pm2 ou Docker para rodar em producao:
-
-```bash
-npm run build
-npm start
-```
+- **Next.js 16** + TypeScript
+- **SQLite** (banco embutido, sem servidor)
+- **Prisma ORM**
+- **NextAuth v4** (autenticação)
+- **Tailwind CSS v4**
+- **Web Push VAPID** (notificações, sem Firebase)
+- **node-cron** (lembretes automáticos)
 
 ---
 
-## 🛡️ Acesso admin
+## 💰 Cobrança
 
-```
-URL: /admin/login
-Email: (configurado em ADMIN_EMAIL no .env)
-Senha: (configurado em ADMIN_PASSWORD no .env)
-```
+- R$ 1,00 por agendamento confirmado
+- Fatura gerada automaticamente no final do mês
+- Conta suspensa em caso de inadimplência
 
 ---
 
-## 📞 Suporte
+## 🔐 Admin
 
-suporte@agenda-e-dolphin.com
+Acesse `/admin/login` com as credenciais do `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
