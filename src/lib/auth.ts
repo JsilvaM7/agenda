@@ -3,6 +3,15 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
@@ -13,22 +22,22 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "Nome do serviço", type: "text" },
         password: { label: "Senha", type: "password" },
         isAdmin: { label: "Admin", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.identifier || !credentials?.password) return null;
 
-        // Verifica se é login de admin
+        // Admin login (usa email e senha do .env)
         if (credentials.isAdmin === "true") {
           if (
-            credentials.email === process.env.ADMIN_EMAIL &&
+            credentials.identifier === process.env.ADMIN_EMAIL &&
             credentials.password === process.env.ADMIN_PASSWORD
           ) {
             return {
               id: "admin",
-              email: credentials.email,
+              email: process.env.ADMIN_EMAIL,
               name: "Administrador",
               role: "admin",
             };
@@ -36,30 +45,32 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Login de comerciante
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-          include: { business: true },
+        // Login de comerciante pelo slug (nome do serviço)
+        const slug = slugify(credentials.identifier);
+
+        const business = await prisma.business.findUnique({
+          where: { slug },
+          include: { user: true },
         });
 
-        if (!user) return null;
+        if (!business) return null;
 
         const passwordValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          business.user.password
         );
         if (!passwordValid) return null;
 
-        if (user.business && !user.business.active) {
+        if (!business.active) {
           throw new Error("Conta desativada. Entre em contato com o suporte.");
         }
 
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
+          id: business.user.id,
+          email: business.user.email ?? business.slug,
+          name: business.name,
           role: "merchant",
-          businessSlug: user.business?.slug,
+          businessSlug: business.slug,
         };
       },
     }),

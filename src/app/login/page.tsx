@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ identifier: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -18,15 +18,14 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await signIn("credentials", {
-        email: form.email,
+        identifier: form.identifier,
         password: form.password,
         isAdmin: "false",
         redirect: false,
       });
       if (res?.error) {
-        toast.error("Email ou senha incorretos");
+        toast.error("Nome do serviço ou senha incorretos");
       } else {
-        toast.success("Bem-vindo!");
         router.push("/dashboard");
       }
     } finally {
@@ -36,7 +35,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
@@ -45,24 +44,22 @@ export default function LoginPage() {
             </div>
             <span className="text-2xl font-bold text-orange-600">Agenda</span>
           </Link>
-          <p className="text-gray-500 mt-2 text-sm">Acesse sua conta</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-3xl shadow-xl shadow-orange-100 border border-orange-100 p-8 animate-slide-up">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Entrar</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-7">Entrar</h1>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email
+                Nome do serviço
               </label>
               <input
-                type="email"
+                type="text"
                 required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="seu@email.com"
+                value={form.identifier}
+                onChange={(e) => setForm({ ...form, identifier: e.target.value })}
+                placeholder="Barbearia do João"
                 className="w-full px-4 py-3 rounded-xl border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 bg-orange-50/30 text-gray-800 placeholder-gray-400 transition"
               />
             </div>
@@ -106,7 +103,7 @@ export default function LoginPage() {
           <p className="text-center text-sm text-gray-500 mt-6">
             Não tem conta?{" "}
             <Link href="/register" className="text-orange-500 font-semibold hover:text-orange-600">
-              Cadastre-se grátis
+              Criar conta
             </Link>
           </p>
         </div>
