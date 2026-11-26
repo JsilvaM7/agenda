@@ -34,24 +34,51 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100 px-4">
-      <div className="w-full max-w-sm">
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #ffedd5 100%)",
+        padding: "1rem",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: "360px" }}>
 
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-200 mb-4">
-            <Calendar className="w-9 h-9 text-white" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2.5rem" }}>
+          <div
+            style={{
+              width: 64, height: 64,
+              borderRadius: 20,
+              background: "linear-gradient(135deg, #fb923c, #ea580c)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 20px 40px rgba(251,146,60,0.35)",
+              marginBottom: "1rem",
+            }}
+          >
+            <Calendar style={{ width: 36, height: 36, color: "white" }} />
           </div>
-          <h1 className="text-4xl font-extrabold text-orange-500 tracking-tight">
+          <h1 style={{ fontSize: "2.5rem", fontWeight: 800, color: "#f97316", letterSpacing: "-1px", margin: 0 }}>
             Agenda
           </h1>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl shadow-orange-100 border border-orange-100 p-8">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div
+          style={{
+            background: "white",
+            borderRadius: 24,
+            boxShadow: "0 25px 60px rgba(251,146,60,0.12), 0 4px 16px rgba(0,0,0,0.06)",
+            border: "1.5px solid #fed7aa",
+            padding: "2rem",
+          }}
+        >
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 
-            {/* Nome do serviço */}
+            {/* Nome */}
             <input
               type="text"
               required
@@ -59,11 +86,25 @@ export default function HomePage() {
               value={form.identifier}
               onChange={(e) => setForm({ ...form, identifier: e.target.value })}
               placeholder="Nome do serviço"
-              className="w-full px-4 py-4 rounded-2xl border-2 border-orange-100 focus:outline-none focus:border-orange-400 bg-orange-50/40 text-gray-800 placeholder-gray-300 text-base transition font-medium"
+              style={{
+                width: "100%",
+                padding: "1rem 1.25rem",
+                borderRadius: 16,
+                border: "2px solid #fed7aa",
+                background: "rgba(255,247,237,0.5)",
+                fontSize: "1rem",
+                fontWeight: 500,
+                color: "#1f2937",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 0.2s",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = "#fb923c")}
+              onBlur={(e) => (e.target.style.borderColor = "#fed7aa")}
             />
 
-            {/* Senha com olhinho como marca d'água */}
-            <div className="relative">
+            {/* Senha */}
+            <div style={{ position: "relative" }}>
               <input
                 type={showPass ? "text" : "password"}
                 required
@@ -71,47 +112,85 @@ export default function HomePage() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="Senha"
-                className="w-full px-4 py-4 pr-14 rounded-2xl border-2 border-orange-100 focus:outline-none focus:border-orange-400 bg-orange-50/40 text-gray-800 placeholder-gray-300 text-base transition font-medium"
+                style={{
+                  width: "100%",
+                  padding: "1rem 3.5rem 1rem 1.25rem",
+                  borderRadius: 16,
+                  border: "2px solid #fed7aa",
+                  background: "rgba(255,247,237,0.5)",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  color: "#1f2937",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#fb923c")}
+                onBlur={(e) => (e.target.style.borderColor = "#fed7aa")}
               />
-              {/* Olhinho como marca d'água — só aparece quando o campo está vazio */}
+              {/* Olhinho — marca d'água quando vazio, botão quando preenchido */}
               {!form.password ? (
-                <Eye className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-200 pointer-events-none" />
+                <Eye
+                  style={{
+                    position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+                    width: 20, height: 20, color: "#d1d5db", pointerEvents: "none",
+                  }}
+                />
               ) : (
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition"
+                  style={{
+                    position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0,
+                  }}
                 >
-                  {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPass
+                    ? <EyeOff style={{ width: 20, height: 20 }} />
+                    : <Eye style={{ width: 20, height: 20 }} />}
                 </button>
               )}
             </div>
 
-            {/* Botão entrar */}
+            {/* Botão */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-1 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-4 rounded-2xl transition text-base flex items-center justify-center gap-2 disabled:opacity-70 shadow-lg shadow-orange-200"
+              style={{
+                width: "100%",
+                padding: "1rem",
+                borderRadius: 16,
+                border: "none",
+                background: loading ? "#fdba74" : "linear-gradient(135deg, #fb923c, #f97316)",
+                color: "white",
+                fontSize: "1rem",
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                boxShadow: "0 8px 24px rgba(251,146,60,0.35)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                marginTop: "0.25rem",
+                transition: "opacity 0.2s",
+              }}
             >
               {loading
-                ? <><Loader2 className="w-5 h-5 animate-spin" /> Entrando...</>
+                ? <><Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} /> Entrando...</>
                 : "Entrar"}
             </button>
           </form>
         </div>
 
         {/* Criar conta */}
-        <p className="text-center mt-6 text-sm text-gray-400">
+        <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.875rem", color: "#9ca3af" }}>
           Ainda não tem conta?{" "}
-          <Link
-            href="/register"
-            className="text-orange-500 font-bold hover:text-orange-600 transition"
-          >
+          <Link href="/register" style={{ color: "#f97316", fontWeight: 700, textDecoration: "none" }}>
             Criar conta
           </Link>
         </p>
 
       </div>
-    </main>
+    </div>
   );
 }

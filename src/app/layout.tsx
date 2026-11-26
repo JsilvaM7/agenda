@@ -32,7 +32,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.className} bg-orange-50 text-gray-800 antialiased`}>
+      <body className={`${inter.className} bg-orange-50 text-gray-800 antialiased min-h-screen`}>
         <Providers>
           {children}
           <Toaster
