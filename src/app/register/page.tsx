@@ -38,7 +38,7 @@ export default function RegisterPage() {
       if (!res.ok) {
         toast.error(data.error || "Erro ao criar conta");
       } else {
-        toast.success("Conta criada! Faça login.");
+        toast.success("Conta criada!");
         router.push("/login");
       }
     } finally {
@@ -49,87 +49,83 @@ export default function RegisterPage() {
   const slug = slugify(form.businessName);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 p-4">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100 px-4">
       <div className="w-full max-w-sm">
+
         {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-200">
-              <Calendar className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-orange-600">Agenda</span>
-          </Link>
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-xl shadow-orange-200 mb-4">
+            <Calendar className="w-9 h-9 text-white" />
+          </div>
+          <h1 className="text-4xl font-extrabold text-orange-500 tracking-tight">
+            Agenda
+          </h1>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl shadow-orange-100 border border-orange-100 p-8 animate-slide-up">
-          <h1 className="text-2xl font-bold text-gray-800 mb-7">Criar conta</h1>
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-2xl shadow-orange-100 border border-orange-100 p-8">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Nome do serviço */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Nome do serviço
-              </label>
               <input
                 type="text"
                 required
                 value={form.businessName}
                 onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-                placeholder="Barbearia do João"
-                className="w-full px-4 py-3 rounded-xl border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50/30 text-gray-800 placeholder-gray-400 transition"
+                placeholder="Nome do serviço"
+                className="w-full px-4 py-4 rounded-2xl border-2 border-orange-100 focus:outline-none focus:border-orange-400 bg-orange-50/40 text-gray-800 placeholder-gray-300 text-base transition font-medium"
               />
               {form.businessName && slug && (
-                <p className="text-xs text-orange-400 mt-1.5 font-medium">
-                  🔗 Seu link: /b/{slug}
+                <p className="text-xs text-orange-400 mt-1.5 ml-1 font-medium">
+                  🔗 /b/{slug}
                 </p>
               )}
             </div>
 
             {/* Senha */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Senha
-              </label>
-              <div className="relative">
-                <input
-                  type={showPass ? "text" : "password"}
-                  required
-                  minLength={6}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
-                  className="w-full px-4 py-3 rounded-xl border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-orange-50/30 text-gray-800 placeholder-gray-400 transition pr-12"
-                />
+            <div className="relative">
+              <input
+                type={showPass ? "text" : "password"}
+                required
+                minLength={6}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Senha"
+                className="w-full px-4 py-4 pr-14 rounded-2xl border-2 border-orange-100 focus:outline-none focus:border-orange-400 bg-orange-50/40 text-gray-800 placeholder-gray-300 text-base transition font-medium"
+              />
+              {!form.password ? (
+                <Eye className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-200 pointer-events-none" />
+              ) : (
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition"
                 >
                   {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
-              </div>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-bold py-3.5 rounded-xl hover:from-orange-500 hover:to-orange-600 transition shadow-lg shadow-orange-200 flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full mt-1 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-4 rounded-2xl transition text-base flex items-center justify-center gap-2 disabled:opacity-70 shadow-lg shadow-orange-200"
             >
-              {loading ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Criando...</>
-              ) : (
-                "Criar conta"
-              )}
+              {loading
+                ? <><Loader2 className="w-5 h-5 animate-spin" /> Criando...</>
+                : "Criar conta"}
             </button>
           </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Já tem conta?{" "}
-            <Link href="/login" className="text-orange-500 font-semibold hover:text-orange-600">
-              Entrar
-            </Link>
-          </p>
         </div>
+
+        <p className="text-center mt-6 text-sm text-gray-400">
+          Já tem conta?{" "}
+          <Link href="/" className="text-orange-500 font-bold hover:text-orange-600 transition">
+            Entrar
+          </Link>
+        </p>
+
       </div>
     </main>
   );
