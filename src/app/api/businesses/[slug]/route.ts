@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -11,7 +10,6 @@ export async function GET(
     const business = await prisma.business.findUnique({
       where: { slug, active: true },
       include: {
-        photos: { orderBy: { order: "asc" } },
         timeSlots: { where: { active: true }, orderBy: { dayOfWeek: "asc" } },
       },
     });
@@ -21,15 +19,14 @@ export async function GET(
     }
 
     return NextResponse.json({
-      id: business.id,
-      name: business.name,
+      id:          business.id,
+      name:        business.name,
       description: business.description,
-      category: business.category,
-      phone: business.phone,
-      photos: business.photos.map((p) => ({ id: p.id, url: p.url })),
-      timeSlots: business.timeSlots,
+      category:    business.category,
+      phone:       business.phone,
+      timeSlots:   business.timeSlots,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

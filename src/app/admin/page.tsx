@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Users, Calendar, ExternalLink, ToggleLeft, ToggleRight, ChevronRight } from "lucide-react";
+import { Users, Calendar, ExternalLink, ChevronRight } from "lucide-react";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
@@ -14,7 +14,7 @@ export default async function AdminPage() {
   const businesses = await prisma.business.findMany({
     include: {
       user: { select: { name: true, email: true, createdAt: true } },
-      _count: { select: { bookings: true, photos: true } },
+      _count: { select: { bookings: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -71,7 +71,6 @@ export default async function AdminPage() {
                 <p className="text-sm text-gray-400 mt-0.5">{biz.user.email}</p>
                 <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
                   <span>📅 {biz._count.bookings} agendamentos</span>
-                  <span>📸 {biz._count.photos} fotos</span>
                   <span>Desde {format(new Date(biz.user.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
                 </div>
               </div>

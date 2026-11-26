@@ -21,12 +21,10 @@ export default async function DashboardPage() {
         orderBy: { date: "desc" },
         take: 10,
       },
-      photos: true,
       invoices: {
         orderBy: { createdAt: "desc" },
         take: 6,
       },
-      _count: { select: { bookings: true } },
     },
   });
 
@@ -45,14 +43,19 @@ export default async function DashboardPage() {
     },
   });
 
+  // Total de agendamentos
+  const totalBookings = await prisma.booking.count({
+    where: { businessId: business.id },
+  });
+
   // Fatura do mês atual (se existir)
   const currentInvoice = business.invoices.find(
-    (inv) => inv.month === now.getMonth() + 1 && inv.year === now.getFullYear()
+    (inv: any) => inv.month === now.getMonth() + 1 && inv.year === now.getFullYear()
   );
 
   // Fatura em atraso (OVERDUE)
   const overdueInvoice = business.invoices.find(
-    (inv) => inv.status === "OVERDUE"
+    (inv: any) => inv.status === "OVERDUE"
   );
 
   const today = new Date();
@@ -60,13 +63,13 @@ export default async function DashboardPage() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const todayBookings = business.bookings.filter((b) => {
+  const todayBookings = business.bookings.filter((b: any) => {
     const d = new Date(b.date);
     return d >= today && d < tomorrow && b.status !== "CANCELLED";
   }).length;
 
   const upcoming = business.bookings.filter(
-    (b) => new Date(b.date) >= today && b.status !== "CANCELLED"
+    (b: any) => new Date(b.date) >= today && b.status !== "CANCELLED"
   ).length;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://agenda-e-dolphin.com";
@@ -76,7 +79,7 @@ export default async function DashboardPage() {
     {
       icon: <Calendar className="w-5 h-5 text-orange-500" />,
       label: "Total de agendamentos",
-      value: business._count.bookings,
+      value: totalBookings,
       bg: "bg-orange-50",
     },
     {
@@ -93,8 +96,8 @@ export default async function DashboardPage() {
     },
     {
       icon: <Users className="w-5 h-5 text-purple-500" />,
-      label: "Fotos",
-      value: `${business.photos.length}/30`,
+      label: "Mês atual",
+      value: thisMonthBookings,
       bg: "bg-purple-50",
     },
   ];
@@ -252,7 +255,7 @@ export default async function DashboardPage() {
                 Histórico de faturas
               </p>
               <div className="space-y-2">
-                {business.invoices.map((inv) => (
+                {business.invoices.map((inv: any) => (
                   <div
                     key={inv.id}
                     className="flex items-center justify-between py-2 px-3 rounded-xl bg-gray-50 border border-gray-100"
@@ -372,7 +375,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="divide-y divide-orange-50">
-            {business.bookings.slice(0, 8).map((booking) => (
+            {business.bookings.slice(0, 8).map((booking: any) => (
               <div
                 key={booking.id}
                 className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-orange-50/50 transition"
@@ -390,7 +393,7 @@ export default async function DashboardPage() {
                     )}
                     {booking.message && (
                       <p className="text-xs text-gray-400 italic truncate max-w-[200px]">
-                        "{booking.message}"
+                        &quot;{booking.message}&quot;
                       </p>
                     )}
                   </div>
